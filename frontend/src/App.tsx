@@ -19,9 +19,52 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 const ContentContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
+  padding: theme.spacing(3),
   height: '100%',
   overflowY: 'auto',
+  backgroundColor: '#ffffff',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+}));
+
+const MarkdownContent = styled('div')(({ theme }) => ({
+  '& h1, & h2, & h3, & h4, & h5, & h6': {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(1),
+  },
+  '& p': {
+    marginBottom: theme.spacing(2),
+  },
+  '& ul, & ol': {
+    marginBottom: theme.spacing(2),
+    paddingLeft: theme.spacing(3),
+  },
+  '& li': {
+    marginBottom: theme.spacing(1),
+  },
+  '& img': {
+    maxWidth: '100%',
+    height: 'auto',
+    marginBottom: theme.spacing(2),
+  },
+  '& blockquote': {
+    borderLeft: `4px solid ${theme.palette.grey[300]}`,
+    paddingLeft: theme.spacing(2),
+    marginLeft: 0,
+    marginRight: 0,
+    fontStyle: 'italic',
+  },
+  '& table': {
+    borderCollapse: 'collapse',
+    width: '100%',
+    marginBottom: theme.spacing(2),
+  },
+  '& th, & td': {
+    border: `1px solid ${theme.palette.grey[300]}`,
+    padding: theme.spacing(1),
+  },
+  '& tr:nth-of-type(even)': {
+    backgroundColor: theme.palette.grey[50],
+  },
 }));
 
 interface MarkdownFile {
@@ -124,7 +167,31 @@ const App: React.FC = () => {
   const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     const renderMarkdown = (text: string): React.ReactNode => {
       const lines = text.split('\n');
+      let inCodeBlock = false;
+      let codeContent = '';
+
       return lines.map((line, index) => {
+        if (line.startsWith('```')) {
+          if (inCodeBlock) {
+            inCodeBlock = false;
+            const result = (
+              <pre key={index}>
+                <code>{codeContent}</code>
+              </pre>
+            );
+            codeContent = '';
+            return result;
+          } else {
+            inCodeBlock = true;
+            return null;
+          }
+        }
+
+        if (inCodeBlock) {
+          codeContent += line + '\n';
+          return null;
+        }
+
         if (line.startsWith('# ')) {
           return <Typography key={index} variant="h1">{line.slice(2)}</Typography>;
         } else if (line.startsWith('## ')) {
@@ -133,15 +200,22 @@ const App: React.FC = () => {
           return <Typography key={index} variant="h3">{line.slice(4)}</Typography>;
         } else if (line.startsWith('- ')) {
           return <Typography key={index} component="li">{line.slice(2)}</Typography>;
-        } else if (line.startsWith('```')) {
-          return <pre key={index}><code>{line}</code></pre>;
+        } else if (line.startsWith('> ')) {
+          return <blockquote key={index}>{line.slice(2)}</blockquote>;
+        } else if (line.startsWith('![')) {
+          const match = line.match(/!\[(.*?)\]\((.*?)\)/);
+          if (match) {
+            return <img key={index} src={match[2]} alt={match[1]} />;
+          }
+        } else if (line.trim() === '') {
+          return <br key={index} />;
         } else {
           return <Typography key={index} paragraph>{line}</Typography>;
         }
       });
     };
 
-    return <>{renderMarkdown(content)}</>;
+    return <MarkdownContent>{renderMarkdown(content)}</MarkdownContent>;
   };
 
   const FileViewer: React.FC = () => {
@@ -188,7 +262,7 @@ const App: React.FC = () => {
 
     return (
       <>
-        <Typography variant="h4">{file.name}</Typography>
+        <Typography variant="h4" gutterBottom>{file.name}</Typography>
         <MarkdownRenderer content={file.content} />
       </>
     );

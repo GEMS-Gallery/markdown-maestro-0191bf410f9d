@@ -14,6 +14,28 @@ const theme = createTheme({
       main: '#f6f8fa',
     },
   },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: '2.5rem',
+      fontWeight: 500,
+      marginBottom: '1rem',
+    },
+    h2: {
+      fontSize: '2rem',
+      fontWeight: 500,
+      marginBottom: '0.8rem',
+    },
+    h3: {
+      fontSize: '1.75rem',
+      fontWeight: 500,
+      marginBottom: '0.6rem',
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
