@@ -1,21 +1,21 @@
 type Result_1 = 
  variant {
    err: text;
-   ok: DocSection;
+   ok: MarkdownFile;
  };
 type Result = 
  variant {
    err: text;
    ok: nat;
  };
-type DocSection = 
+type MarkdownFile = 
  record {
    content: text;
    id: nat;
-   title: text;
+   name: text;
  };
 service : {
-  getAllDocSections: () -> (vec DocSection) query;
-  getDocSection: (nat) -> (Result_1) query;
-  saveDocSection: (text, text) -> (Result);
+  getAllMarkdownFiles: () -> (vec MarkdownFile) query;
+  getMarkdownFile: (nat) -> (Result_1) query;
+  saveMarkdownFile: (text, text) -> (Result);
 }

@@ -4,35 +4,35 @@ import Nat "mo:base/Nat";
 import Array "mo:base/Array";
 
 actor {
-  type DocSection = {
+  type MarkdownFile = {
     id: Nat;
-    title: Text;
+    name: Text;
     content: Text;
   };
 
   stable var nextId: Nat = 0;
-  stable var docSections: [DocSection] = [];
+  stable var markdownFiles: [MarkdownFile] = [];
 
-  public func saveDocSection(title: Text, content: Text): async Result.Result<Nat, Text> {
+  public func saveMarkdownFile(name: Text, content: Text): async Result.Result<Nat, Text> {
     let id = nextId;
-    let newSection: DocSection = {
+    let newFile: MarkdownFile = {
       id = id;
-      title = title;
+      name = name;
       content = content;
     };
-    docSections := Array.append(docSections, [newSection]);
+    markdownFiles := Array.append(markdownFiles, [newFile]);
     nextId += 1;
     #ok(id)
   };
 
-  public query func getDocSection(id: Nat): async Result.Result<DocSection, Text> {
-    switch (Array.find<DocSection>(docSections, func(section) { section.id == id })) {
-      case (null) { #err("Section not found") };
-      case (?section) { #ok(section) };
+  public query func getMarkdownFile(id: Nat): async Result.Result<MarkdownFile, Text> {
+    switch (Array.find<MarkdownFile>(markdownFiles, func(file) { file.id == id })) {
+      case (null) { #err("File not found") };
+      case (?file) { #ok(file) };
     }
   };
 
-  public query func getAllDocSections(): async [DocSection] {
-    docSections
+  public query func getAllMarkdownFiles(): async [MarkdownFile] {
+    markdownFiles
   };
 }

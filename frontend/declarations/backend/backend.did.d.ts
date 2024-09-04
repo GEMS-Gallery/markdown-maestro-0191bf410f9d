@@ -2,19 +2,19 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-export interface DocSection {
+export interface MarkdownFile {
   'id' : bigint,
-  'title' : string,
   'content' : string,
+  'name' : string,
 }
 export type Result = { 'ok' : bigint } |
   { 'err' : string };
-export type Result_1 = { 'ok' : DocSection } |
+export type Result_1 = { 'ok' : MarkdownFile } |
   { 'err' : string };
 export interface _SERVICE {
-  'getAllDocSections' : ActorMethod<[], Array<DocSection>>,
-  'getDocSection' : ActorMethod<[bigint], Result_1>,
-  'saveDocSection' : ActorMethod<[string, string], Result>,
+  'getAllMarkdownFiles' : ActorMethod<[], Array<MarkdownFile>>,
+  'getMarkdownFile' : ActorMethod<[bigint], Result_1>,
+  'saveMarkdownFile' : ActorMethod<[string, string], Result>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];

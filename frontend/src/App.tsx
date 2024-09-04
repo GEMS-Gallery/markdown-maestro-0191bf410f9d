@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemText, Typography, Paper } from '@mui/material';
 import { styled } from '@mui/system';
 import { backend } from 'declarations/backend';
 import { Routes, Route, Link, useParams } from 'react-router-dom';
@@ -18,36 +18,33 @@ const StyledButton = styled(Button)(({ theme }) => ({
   marginRight: theme.spacing(2),
 }));
 
-const PreviewContainer = styled('div')(({ theme }) => ({
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
+const ContentContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
-  backgroundColor: theme.palette.background.paper,
   height: '100%',
   overflowY: 'auto',
 }));
 
-interface DocSection {
+interface MarkdownFile {
   id: number;
-  title: string;
+  name: string;
   content: string;
 }
 
 const App: React.FC = () => {
-  const [sections, setSections] = useState<DocSection[]>([]);
+  const [files, setFiles] = useState<MarkdownFile[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchAllSections();
+    fetchAllFiles();
   }, []);
 
-  const fetchAllSections = async () => {
+  const fetchAllFiles = async () => {
     setLoading(true);
     try {
-      const result = await backend.getAllDocSections();
-      setSections(result);
+      const result = await backend.getAllMarkdownFiles();
+      setFiles(result);
     } catch (error) {
-      console.error('Error fetching sections:', error);
+      console.error('Error fetching files:', error);
     } finally {
       setLoading(false);
     }
@@ -55,58 +52,34 @@ const App: React.FC = () => {
 
   const Navigation: React.FC = () => (
     <List>
-      {sections.map((section) => (
-        <ListItem key={section.id} component={Link} to={`/section/${section.id}`}>
-          <ListItemText primary={section.title} />
+      {files.map((file) => (
+        <ListItem key={file.id} component={Link} to={`/file/${file.id}`}>
+          <ListItemText primary={file.name} />
         </ListItem>
       ))}
       <ListItem component={Link} to="/new">
-        <ListItemText primary="Add New Section" />
+        <ListItemText primary="Add New File" />
         <AddIcon />
       </ListItem>
     </List>
   );
 
-  const SectionEditor: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const [title, setTitle] = useState('');
+  const FileUploader: React.FC = () => {
+    const [name, setName] = useState('');
     const [content, setContent] = useState('');
-
-    useEffect(() => {
-      if (id) {
-        fetchSection(parseInt(id));
-      }
-    }, [id]);
-
-    const fetchSection = async (sectionId: number) => {
-      setLoading(true);
-      try {
-        const result = await backend.getDocSection(sectionId);
-        if ('ok' in result) {
-          setTitle(result.ok.title);
-          setContent(result.ok.content);
-        } else {
-          console.error('Error fetching section:', result.err);
-        }
-      } catch (error) {
-        console.error('Error fetching section:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     const handleSave = async () => {
       setLoading(true);
       try {
-        const result = await backend.saveDocSection(title, content);
+        const result = await backend.saveMarkdownFile(name, content);
         if ('ok' in result) {
-          console.log('Section saved with ID:', result.ok);
-          fetchAllSections();
+          console.log('File saved with ID:', result.ok);
+          fetchAllFiles();
         } else {
-          console.error('Error saving section:', result.err);
+          console.error('Error saving file:', result.err);
         }
       } catch (error) {
-        console.error('Error saving section:', error);
+        console.error('Error saving file:', error);
       } finally {
         setLoading(false);
       }
@@ -116,15 +89,15 @@ const App: React.FC = () => {
       <>
         <StyledTextField
           fullWidth
-          label="Section Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          label="File Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
         <StyledTextField
           fullWidth
           multiline
           rows={10}
-          label="Section Content"
+          label="Markdown Content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
@@ -134,46 +107,69 @@ const App: React.FC = () => {
           onClick={handleSave}
           disabled={loading}
         >
-          {loading ? <CircularProgress size={24} /> : 'Save Section'}
+          {loading ? <CircularProgress size={24} /> : 'Save File'}
         </StyledButton>
       </>
     );
   };
 
-  const SectionViewer: React.FC = () => {
+  const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+    const renderMarkdown = (text: string): React.ReactNode => {
+      const lines = text.split('\n');
+      return lines.map((line, index) => {
+        if (line.startsWith('# ')) {
+          return <Typography key={index} variant="h1">{line.slice(2)}</Typography>;
+        } else if (line.startsWith('## ')) {
+          return <Typography key={index} variant="h2">{line.slice(3)}</Typography>;
+        } else if (line.startsWith('### ')) {
+          return <Typography key={index} variant="h3">{line.slice(4)}</Typography>;
+        } else if (line.startsWith('- ')) {
+          return <Typography key={index} component="li">{line.slice(2)}</Typography>;
+        } else if (line.startsWith('```')) {
+          return <pre key={index}><code>{line}</code></pre>;
+        } else {
+          return <Typography key={index} paragraph>{line}</Typography>;
+        }
+      });
+    };
+
+    return <>{renderMarkdown(content)}</>;
+  };
+
+  const FileViewer: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const [section, setSection] = useState<DocSection | null>(null);
+    const [file, setFile] = useState<MarkdownFile | null>(null);
 
     useEffect(() => {
       if (id) {
-        fetchSection(parseInt(id));
+        fetchFile(parseInt(id));
       }
     }, [id]);
 
-    const fetchSection = async (sectionId: number) => {
+    const fetchFile = async (fileId: number) => {
       setLoading(true);
       try {
-        const result = await backend.getDocSection(sectionId);
+        const result = await backend.getMarkdownFile(fileId);
         if ('ok' in result) {
-          setSection(result.ok);
+          setFile(result.ok);
         } else {
-          console.error('Error fetching section:', result.err);
+          console.error('Error fetching file:', result.err);
         }
       } catch (error) {
-        console.error('Error fetching section:', error);
+        console.error('Error fetching file:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (!section) {
+    if (!file) {
       return <Typography>Loading...</Typography>;
     }
 
     return (
       <>
-        <Typography variant="h4">{section.title}</Typography>
-        <Typography>{section.content}</Typography>
+        <Typography variant="h4">{file.name}</Typography>
+        <MarkdownRenderer content={file.content} />
       </>
     );
   };
@@ -185,12 +181,13 @@ const App: React.FC = () => {
           <Navigation />
         </Grid>
         <Grid item xs={12} md={9}>
-          <Routes>
-            <Route path="/" element={<Typography variant="h4">Welcome to the Documentation Site</Typography>} />
-            <Route path="/new" element={<SectionEditor />} />
-            <Route path="/section/:id" element={<SectionViewer />} />
-            <Route path="/edit/:id" element={<SectionEditor />} />
-          </Routes>
+          <ContentContainer>
+            <Routes>
+              <Route path="/" element={<Typography variant="h4">Welcome to the Markdown Documentation Site</Typography>} />
+              <Route path="/new" element={<FileUploader />} />
+              <Route path="/file/:id" element={<FileViewer />} />
+            </Routes>
+          </ContentContainer>
         </Grid>
       </Grid>
     </StyledContainer>
