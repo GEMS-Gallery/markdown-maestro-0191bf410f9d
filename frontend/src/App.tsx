@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemText, Typography, Paper, Alert } from '@mui/material';
+import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemIcon, ListItemText, Typography, Paper, Alert } from '@mui/material';
 import { styled } from '@mui/system';
 import { backend } from 'declarations/backend';
 import { Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
   marginTop: theme.spacing(4),
@@ -24,6 +25,19 @@ const ContentContainer = styled(Paper)(({ theme }) => ({
   overflowY: 'auto',
   backgroundColor: '#ffffff',
   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+}));
+
+const NavigationContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2),
+  backgroundColor: '#f5f5f5',
+  height: '100%',
+}));
+
+const StyledListItem = styled(ListItem)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  '&:hover': {
+    backgroundColor: '#e0e0e0',
+  },
 }));
 
 const MarkdownContent = styled('div')(({ theme }) => ({
@@ -71,7 +85,19 @@ interface MarkdownFile {
   id: number;
   name: string;
   content: string;
+  createdAt: number;
 }
+
+const formatDate = (timestamp: number): string => {
+  const date = new Date(timestamp / 1000000);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 const App: React.FC = () => {
   const [files, setFiles] = useState<MarkdownFile[]>([]);
@@ -97,17 +123,27 @@ const App: React.FC = () => {
   };
 
   const Navigation: React.FC = () => (
-    <List>
-      {files.map((file) => (
-        <ListItem key={file.id} component={Link} to={`/file/${file.id}`}>
-          <ListItemText primary={file.name} />
-        </ListItem>
-      ))}
-      <ListItem component={Link} to="/new">
-        <ListItemText primary="Add New File" />
-        <AddIcon />
-      </ListItem>
-    </List>
+    <NavigationContainer>
+      <List>
+        {files.map((file) => (
+          <StyledListItem key={file.id} component={Link} to={`/file/${file.id}`}>
+            <ListItemIcon>
+              <DescriptionIcon />
+            </ListItemIcon>
+            <ListItemText 
+              primary={file.name}
+              secondary={formatDate(file.createdAt)}
+            />
+          </StyledListItem>
+        ))}
+        <StyledListItem component={Link} to="/new">
+          <ListItemIcon>
+            <AddIcon />
+          </ListItemIcon>
+          <ListItemText primary="Add New File" />
+        </StyledListItem>
+      </List>
+    </NavigationContainer>
   );
 
   const FileUploader: React.FC = () => {
@@ -263,6 +299,9 @@ const App: React.FC = () => {
     return (
       <>
         <Typography variant="h4" gutterBottom>{file.name}</Typography>
+        <Typography variant="subtitle2" gutterBottom>
+          Created: {formatDate(file.createdAt)}
+        </Typography>
         <MarkdownRenderer content={file.content} />
       </>
     );

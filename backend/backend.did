@@ -11,6 +11,7 @@ type Result =
 type MarkdownFile = 
  record {
    content: text;
+   createdAt: int;
    id: nat;
    name: text;
  };

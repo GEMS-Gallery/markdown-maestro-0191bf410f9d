@@ -3,6 +3,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Nat,
     'content' : IDL.Text,
     'name' : IDL.Text,
+    'createdAt' : IDL.Int,
   });
   const Result_1 = IDL.Variant({ 'ok' : MarkdownFile, 'err' : IDL.Text });
   const Result = IDL.Variant({ 'ok' : IDL.Nat, 'err' : IDL.Text });

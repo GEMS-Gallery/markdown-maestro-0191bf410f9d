@@ -6,6 +6,7 @@ export interface MarkdownFile {
   'id' : bigint,
   'content' : string,
   'name' : string,
+  'createdAt' : bigint,
 }
 export type Result = { 'ok' : bigint } |
   { 'err' : string };

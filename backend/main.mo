@@ -1,13 +1,17 @@
+import Int "mo:base/Int";
+
 import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Array "mo:base/Array";
+import Time "mo:base/Time";
 
 actor {
   type MarkdownFile = {
     id: Nat;
     name: Text;
     content: Text;
+    createdAt: Int;
   };
 
   stable var nextId: Nat = 0;
@@ -19,6 +23,7 @@ actor {
       id = id;
       name = name;
       content = content;
+      createdAt = Time.now();
     };
     markdownFiles := Array.append(markdownFiles, [newFile]);
     nextId += 1;
