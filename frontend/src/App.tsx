@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemText, Typography, Paper } from '@mui/material';
+import { Container, Grid, TextField, Button, CircularProgress, List, ListItem, ListItemText, Typography, Paper, Alert } from '@mui/material';
 import { styled } from '@mui/system';
 import { backend } from 'declarations/backend';
-import { Routes, Route, Link, useParams } from 'react-router-dom';
+import { Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -33,6 +33,7 @@ interface MarkdownFile {
 const App: React.FC = () => {
   const [files, setFiles] = useState<MarkdownFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAllFiles();
@@ -40,11 +41,13 @@ const App: React.FC = () => {
 
   const fetchAllFiles = async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await backend.getAllMarkdownFiles();
       setFiles(result);
     } catch (error) {
       console.error('Error fetching files:', error);
+      setError('Failed to fetch files. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,19 +70,23 @@ const App: React.FC = () => {
   const FileUploader: React.FC = () => {
     const [name, setName] = useState('');
     const [content, setContent] = useState('');
+    const navigate = useNavigate();
 
     const handleSave = async () => {
       setLoading(true);
+      setError(null);
       try {
         const result = await backend.saveMarkdownFile(name, content);
         if ('ok' in result) {
           console.log('File saved with ID:', result.ok);
-          fetchAllFiles();
+          await fetchAllFiles();
+          navigate(`/file/${result.ok}`);
         } else {
-          console.error('Error saving file:', result.err);
+          setError('Error saving file: ' + result.err);
         }
       } catch (error) {
         console.error('Error saving file:', error);
+        setError('Failed to save file. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -109,6 +116,7 @@ const App: React.FC = () => {
         >
           {loading ? <CircularProgress size={24} /> : 'Save File'}
         </StyledButton>
+        {error && <Alert severity="error">{error}</Alert>}
       </>
     );
   };
@@ -139,6 +147,8 @@ const App: React.FC = () => {
   const FileViewer: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [file, setFile] = useState<MarkdownFile | null>(null);
+    const [fileLoading, setFileLoading] = useState(false);
+    const [fileError, setFileError] = useState<string | null>(null);
 
     useEffect(() => {
       if (id) {
@@ -147,23 +157,33 @@ const App: React.FC = () => {
     }, [id]);
 
     const fetchFile = async (fileId: number) => {
-      setLoading(true);
+      setFileLoading(true);
+      setFileError(null);
       try {
         const result = await backend.getMarkdownFile(fileId);
         if ('ok' in result) {
           setFile(result.ok);
         } else {
-          console.error('Error fetching file:', result.err);
+          setFileError('Error fetching file: ' + result.err);
         }
       } catch (error) {
         console.error('Error fetching file:', error);
+        setFileError('Failed to fetch file. Please try again.');
       } finally {
-        setLoading(false);
+        setFileLoading(false);
       }
     };
 
+    if (fileLoading) {
+      return <CircularProgress />;
+    }
+
+    if (fileError) {
+      return <Alert severity="error">{fileError}</Alert>;
+    }
+
     if (!file) {
-      return <Typography>Loading...</Typography>;
+      return <Typography>No file found.</Typography>;
     }
 
     return (
@@ -182,6 +202,8 @@ const App: React.FC = () => {
         </Grid>
         <Grid item xs={12} md={9}>
           <ContentContainer>
+            {loading && <CircularProgress />}
+            {error && <Alert severity="error">{error}</Alert>}
             <Routes>
               <Route path="/" element={<Typography variant="h4">Welcome to the Markdown Documentation Site</Typography>} />
               <Route path="/new" element={<FileUploader />} />
